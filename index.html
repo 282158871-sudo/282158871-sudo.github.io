@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport">
+<title>小学学习乐园 · 正在打开…</title>
+<meta content="#4DABF7" name="theme-color">
+<link href="manifest.json" rel="manifest">
+<!-- 跳板页原本只声明了 apple-touch-icon，浏览器会因此自动去请求 /favicon.ico（该文件不存在 → 控制台 404）。
+     补上标准 icon 声明即可消除，图标复用已部署的 icon-192.png。 -->
+<link href="icon-192.png" rel="icon" sizes="192x192" type="image/png">
+<link href="apple-touch-icon.png" rel="apple-touch-icon">
+<style>
+  html,body{margin:0;height:100%}
+  body{display:flex;align-items:center;justify-content:center;
+       background:#F5F9FF;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+       color:#3C4858}
+  .box{text-align:center;padding:24px}
+  .ring{width:54px;height:54px;margin:0 auto 16px;border-radius:50%;
+        border:5px solid #D9E8FB;border-top-color:#4DABF7;
+        animation:sp 0.9s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .t{font-size:17px;font-weight:700}
+  .s{font-size:13px;color:#8A94A6;margin-top:8px;line-height:1.7}
+  a{color:#4DABF7}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="ring"></div>
+  <div class="t">正在打开学习乐园…</div>
+  <div class="s">如果超过 3 秒没反应，<a href="app_v4.258.html" id="lk">点这里</a></div>
+</div>
+<script>
+/* ============================================================
+   跳板页（v4.110 起 / v4.171 关键升级）
+   为什么需要它：
+     线上 CDN 会把旧页面缓存住（同一路径反复返回旧版本），
+     所以做一个极小的跳板：清掉 Service Worker，
+     再带一次性版本参数跳到 app_<最新版>.html —— 一定拿到最新版。
+
+   ★ v4.171 关键修正：版本号改为「运行时从 ver.txt 读」
+     踩坑实录：index.html 这个路径本身也会被 CDN 硬缓存
+       （实测 eo-cache-status: HIT，发了新版仍返回旧 VER），
+       于是跳板一直把用户带向**旧版本** —— 这正是
+       「点了升级却还是旧版」的根因之一。
+     而 ver.txt 实测 eo-cache-status: MISS（不缓存），永远是最新的。
+     所以：先 fetch ver.txt 拿真版本号 → 跳 app_<它>.html；
+     拿不到（断网/超时 1.2s）就退回下面的内置兜底版本。
+
+   家长看到的影响：打开时有个不到 1 秒的"正在打开"，之后照常用。
+   孩子的学习数据不在这个页面，跳转不会丢任何数据。
+   ============================================================ */
+(function(){
+  /* ★ 内置兜底版本：每次发版改这里（仅在 ver.txt 拿不到时用） */
+  var FALLBACK_VER = 'v4.258';
+  var TIMEOUT = 1200;   /* ver.txt 最多等这么久，超时就先跳，不能干等 */
+
+  /* v4.122：跳转时把 URL 参数带上（?pkg= / ?bundle= 一键导入靠它传参），
+     否则跳板一跳，参数全丢，链接导入就失效了。 */
+  var _qs = (location.search || '').replace(/^\?/, '');
+  var went = false;
+
+  function go(ver){
+    if(went) return; went = true;
+    var v = ver || FALLBACK_VER;
+    var target = 'app_' + v + '.html?t=' + Date.now() + (_qs ? ('&' + _qs) : '');
+    try{ location.replace(target); }
+    catch(e){ try{ location.href = target; }catch(e2){} }
+  }
+
+  /* 清 SW / 缓存（异步，绝不阻塞跳转） */
+  function clearCaches(){
+    try{
+      if(navigator.serviceWorker && navigator.serviceWorker.getRegistrations){
+        navigator.serviceWorker.getRegistrations().then(function(rs){
+          return Promise.all(rs.map(function(r){ return r.unregister(); }));
+        }).then(function(){
+          if(window.caches && caches.keys){
+            return caches.keys().then(function(ks){
+              return Promise.all(ks.map(function(k){ return caches.delete(k); }));
+            });
+          }
+        }).catch(function(){});
+      }
+    }catch(e){}
+  }
+
+  var settled = false;
+  function settle(ver){
+    if(settled) return; settled = true;
+    go(ver);
+  }
+
+  clearCaches();
+
+  /* 1200ms 兜底：无论 ver.txt 结果如何都要跳走，不能卡在"正在打开" */
+  var timer = setTimeout(function(){ settle(FALLBACK_VER); }, TIMEOUT);
+
+  try{
+    fetch('ver.txt?cb=' + Date.now(), { cache: 'no-store' })
+      .then(function(r){ return r.ok ? r.text() : ''; })
+      .then(function(txt){
+        var m = String(txt||'').match(/v\d+\.\d+/);
+        clearTimeout(timer);
+        settle(m ? m[0] : FALLBACK_VER);
+      })
+      .catch(function(){ clearTimeout(timer); settle(FALLBACK_VER); });
+  }catch(e){
+    clearTimeout(timer);
+    settle(FALLBACK_VER);
+  }
+})();
+</script>
+</body>
+</html>

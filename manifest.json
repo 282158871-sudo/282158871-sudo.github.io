@@ -1,0 +1,41 @@
+{
+  "name": "小学学习乐园",
+  "short_name": "学习乐园",
+  "description": "小学学习习惯养成与练习（识字/拼音/数学/古诗/作业）",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#4DABF7",
+  "theme_color": "#4DABF7",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "version": "4.258",
+  "categories": ["education", "kids"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

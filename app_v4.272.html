@@ -1424,7 +1424,12 @@ if(window.requestIdleCallback){
   catch(e){ setTimeout(function(){ ensureHanziStrokes(null); },1200); }
 }else{ setTimeout(function(){ ensureHanziStrokes(null); },1200); }
 </script>
-<script src="hanzi_ordertype.js"></script>
+<!-- ★ v4.272：文件名后面带 ?v=v4.272 是「缓存破防」用的第二重保险。
+     Service Worker 按 URL 当缓存键，光改文件内容、URL 不变的话，
+     老手机上的旧缓存照样命中。带上版本号后，每次发版都是一个新 URL，
+     哪怕 SW 规则没生效也一定能取到新数据。
+     ⚠ 发版时这里要跟着 APP_VER 一起改（见「版本链」第 7 处）。 -->
+<script src="hanzi_ordertype.js?v=v4.272"></script>
 <script src="hanzi_extra.js"></script>
 </head>
 

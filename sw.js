@@ -206,6 +206,27 @@ self.addEventListener('fetch', function (e) {
     return;
   }
 
+  /* ★ v4.272：笔顺名称表 hanzi_ordertype.js 也必须网络优先。
+     和练习包/英语包一模一样的坑：它之前落在「其它资源：缓存优先」，
+     第一次取到就被 Cache API 锁死。家长按百度核对后我改了数据（心=卧钩、
+     字=弯钩），线上文件已经是新的，她手机上读的还是缓存里的旧表 ——
+     表现为「你说改了，可还是显示斜钩」。笔顺数据是会被反复核对修正的，
+     44KB 很小，每次走网络完全无感；断网时自动回退缓存，离线照样能看。 */
+  if (url.pathname.indexOf('hanzi_ordertype.js') >= 0) {
+    e.respondWith(
+      fetch(new Request(req.url, { cache: 'no-store' })).then(function (res) {
+        try {
+          var copy = res.clone();
+          caches.open(CACHE).then(function (c) { c.put(req, copy); });
+        } catch (err) {}
+        return res;
+      }).catch(function () {
+        return caches.match(req);
+      })
+    );
+    return;
+  }
+
   // 导航请求 / 首页 HTML：优先网络
   var isPage = req.mode === 'navigate' ||
     url.pathname === '/' ||

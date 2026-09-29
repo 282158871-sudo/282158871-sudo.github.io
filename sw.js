@@ -11,12 +11,12 @@
    ★ v4.110：缓存键按"真实路径"存，不再把所有页面都塞进 './index.html'。
    以前不管访问的是 / 还是 /app.html，都覆写到 index.html 这一个键上，
    导致跳板页和应用页互相覆盖。 */
-var CACHE = 'primary-learn-v286';
-var SW_VER_NUM = 'v4.286';
+var CACHE = 'primary-learn-v287';
+var SW_VER_NUM = 'v4.287';
 var ASSETS = [
   './',
   './index.html',
-  './app_v4.286.html',
+  './app_v4.287.html',
   './english_g1.js',
   './finder.js',
   './manifest.json',
@@ -31,7 +31,7 @@ var ASSETS = [
    第二次进拼音页就是秒开，断网也能用。 */
 
 self.addEventListener('install', function (e) {
-  // ★ v4.286 改为立即接管：此前要等所有旧页面关闭新 SW 才生效，
+  // ★ v4.287 改为立即接管：此前要等所有旧页面关闭新 SW 才生效，
   // 多次出现「传了新包手机还是旧版」。孩子做题中被打断的概率远小于
   // 卡在坏版本出不来的代价，故改为 install 即 skipWaiting。
   self.skipWaiting();

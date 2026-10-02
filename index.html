@@ -7,7 +7,7 @@
 <meta content="#4DABF7" name="theme-color">
 <!-- HTML 层兜底跳转：JS/SW 在极端情况下没跳走时，2 秒后浏览器自动跳到主程序，
      彻底避免"卡在正在打开/打不开"。JS 正常跳转则本标签不触发。 -->
-<meta http-equiv="refresh" content="2;url=app_v4.314.html">
+<meta http-equiv="refresh" content="2;url=app_v4.315.html">
 <link href="manifest.json" rel="manifest">
 <!-- 跳板页原本只声明了 apple-touch-icon，浏览器会因此自动去请求 /favicon.ico（该文件不存在 → 控制台 404）。
      补上标准 icon 声明即可消除，图标复用已部署的 icon-192.png。 -->
@@ -33,7 +33,7 @@
 <div class="box">
   <div class="ring"></div>
   <div class="t">正在打开学习乐园…</div>
-  <div class="s">如果超过 3 秒没反应，<a href="app_v4.314.html" id="lk">点这里</a></div>
+  <div class="s">如果超过 3 秒没反应，<a href="app_v4.315.html" id="lk">点这里</a></div>
 </div>
 <script>
 /* ============================================================
@@ -57,7 +57,7 @@
    ============================================================ */
 (function(){
   /* ★ 内置兜底版本：每次发版改这里（仅在 ver.txt 拿不到时用） */
-  var FALLBACK_VER = 'v4.314';
+  var FALLBACK_VER = 'v4.315';
   var TIMEOUT = 1200;   /* ver.txt 最多等这么久，超时就先跳，不能干等 */
 
   /* v4.122：跳转时把 URL 参数带上（?pkg= / ?bundle= 一键导入靠它传参），

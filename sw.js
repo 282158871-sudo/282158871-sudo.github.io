@@ -12,11 +12,11 @@
    以前不管访问的是 / 还是 /app.html，都覆写到 index.html 这一个键上，
    导致跳板页和应用页互相覆盖。 */
 var CACHE = 'primary-learn-v306';
-var SW_VER_NUM = 'v4.311';
+var SW_VER_NUM = 'v4.314';
 var ASSETS = [
   './',
   './index.html',
-  './app_v4.311.html',
+  './app_v4.314.html',
   './english_g1.js',
   './finder.js',
   './manifest.json',

@@ -126,18 +126,13 @@ var HanziExtra = (function(){
 
   /* ============ 计分 ============ */
   function updateScore(ok){
+    /* ★ v4.342：星星/士气仍在这里加。
+       能力值(power)、弱项画像(focusTags)、每日流水(dayLog)、统计(stats)
+       改由 paint() / paintSentence() 里的 markCorrect / markWrong 统一写，
+       不再在这里单独 pwBump —— 否则会与 markCorrect/markWrong 内部的 pwBump 重复涨能力值。
+       daily 传 null：自由练习不串「今日必做」打卡（打卡闸门 corePlanDone 只读 dailyPlan，
+       不读 todayQuiz；todayQuiz 只喂 perfectDay 成就，数学侧自由练习本就如此，不污染打卡）。 */
     try{ if(ok){ if(typeof addStar==='function')addStar(1); else if(typeof playStar==='function')playStar(); } }catch(e){}
-    /* ★ v4.258：练习页答题也必须写能力值。
-       以前这里只加星星 —— 孩子在识字练习页练几十题，DATA.power 一条都不长，
-       能力雷达、薄弱题型识别、负反馈出题全都看不到这些数据（实测 6 题：power 0→0）。
-       注意：这里只调 pwBump，不调 markCorrect —— 后者会累加 DATA.stats /
-       DATA.todayQuiz / 每日流水，把自由练习混进"今日必做"的完成判定里，
-       那是另一套口径，不能串。星星和士气的逻辑保持原样。 */
-    try{
-      if(typeof pwBump==='function'&&_curQ&&_curQ.variant){
-        pwBump('hanzi',{variant:_curQ.variant,type:_curQ.variant},ok);
-      }
-    }catch(e){}
   }
   function fb(msg,color){ var e=document.getElementById('hz-extra-fb'); if(e)e.innerHTML='<span style="color:'+(color||'#2e9e4f')+';font-size:16px">'+msg+'</span>'; }
 
@@ -178,7 +173,7 @@ var HanziExtra = (function(){
       stage:stage,
       options:opts,
       /* 提示（不泄露答案）：给错题页「不会做时看一眼」用 */
-      hint:hintOf(q),
+      hint:(q&&q.hint)||hintOf(q),
       wordChar:q.orderWord||'',
       /* 连词成句的标准答案（整句），供解析用 */
       sentAnswer:q.words?q.words.join(''):''
@@ -228,6 +223,12 @@ var HanziExtra = (function(){
           /* 答对了：把正确答案亮出来（此时已作答完，不涉及泄题） */
           all.forEach(function(x){ if(x.getAttribute('data-correct')==='1')x.classList.add('good'); });
           all.forEach(function(x){ x.disabled=true; });
+          /* ★ v4.341 答对自动跳下一题：与主测验区（闯关/练习）体验一致——
+             答对后约 1 秒自动出下一道；答错停留让孩子重想（不自动跳）。
+             传 box 引用做防重：切走或手动点「换一题」后题卡已被换掉，定时器就不会再跳。 */
+          _autoAdvance(box);
+          /* ★ v4.342 接通学情：答对写能力值/连对/统计/流水（daily=null 不串必做打卡） */
+          try{ if(typeof markCorrect==='function') markCorrect('hanzi',null,_curQ); }catch(e){}
         }else{
           /* ★ 答错不直接给答案：只标红所选项，让孩子重想。
              正确答案放进错题本，去「错题重练 → 讲一讲」看解析。
@@ -237,8 +238,14 @@ var HanziExtra = (function(){
           b.classList.add('bad');
           all.forEach(function(x){ if(x.getAttribute('data-correct')!=='1'){ x.disabled=true; } });
           fb('再看看～这个不对哦，换一个试试','#e8543f');
+          /* ★ v4.340 G1Chinese 考点题：答错后亮出本题解析（答题前隐藏，不泄题） */
+          if(_appQHint){ var _hb=document.getElementById('hz-appq-hint'); if(_hb)_hb.style.display='block'; }
           say('再看看，这个不对哦，换一个试试','hanzi');
           collectWrongHint();
+          /* ★ v4.342 接通学情：答错写弱项画像+能力值+统计+流水，并接入坑史（hanzi 选项无 .err，trapHit 自动 no-op） */
+          try{ if(typeof markWrong==='function') markWrong('hanzi',_curQ); }catch(e){}
+          try{ if(typeof focusOnWrongTag==='function'&&_curQ) focusOnWrongTag(_curQ); }catch(e){}
+          try{ if(typeof trapHitSoon==='function') trapHitSoon(b,_curQ,'hanzi'); }catch(e){}
         }
         updateScore(ok);
       };
@@ -371,6 +378,8 @@ var HanziExtra = (function(){
         fb('✓ 答对啦！句子是：'+want.join(''),'#2e9e4f');
         say('答对啦，句子是'+want.join(''),'praise');
         updateScore(true);
+        /* ★ v4.342 接通学情：连词成句答对也写能力值/统计/流水 */
+        try{ if(typeof markCorrect==='function') markCorrect('hanzi',null,_curQ); }catch(e){}
       }else{
         if(slot)slot.style.borderColor='#FF6B6B';
         try{ if(typeof playWrong==='function') playWrong(); }catch(e){}
@@ -379,6 +388,9 @@ var HanziExtra = (function(){
         fb('再看看～第 '+badAt+' 个词不太对哦','#e8543f');
         say('再看看，第'+badAt+'个词语不太对','hanzi');
         collectWrongHint();
+        /* ★ v4.342 接通学情：连词成句答错也写弱项画像+能力值+统计+流水 */
+        try{ if(typeof markWrong==='function') markWrong('hanzi',_curQ); }catch(e){}
+        try{ if(typeof focusOnWrongTag==='function'&&_curQ) focusOnWrongTag(_curQ); }catch(e){}
       }
     };
     /* 「看答案」在练习时不给整句，只给一句思路提示，答案留到错题本看解析 */
@@ -457,9 +469,60 @@ var HanziExtra = (function(){
     if(!_cur)return;
     _spoken='';     /* 换新题：清空朗读指纹，新题的字音才能念出来 */
     var host=box.parentNode; if(!host)return;
-    var tmp=document.createElement('div'); tmp.innerHTML=render(_cur.mode,_cur.ce);
+    /* ★ v4.340 G1Chinese 考点题的「换一题」：走 G1Chinese.gen 重出，
+       不能落回 render(mode) —— 那里的 gen 表没有 G1Chinese 的 key，会出成"没有内容"。 */
+    var _isG1=(typeof window!=='undefined'&&window.G1Chinese&&G1Chinese.keys&&G1Chinese.keys.indexOf(_cur.mode)>=0);
+    var html2=_isG1? renderAppQ(window.G1Chinese.gen(_cur.mode),_cur.mode,_cur.ce) : render(_cur.mode,_cur.ce);
+    var tmp=document.createElement('div'); tmp.innerHTML=html2;
     var nb=tmp.querySelector('#hz-extra-box');
     if(nb&&host){ host.replaceChild(nb,box); paint(); }
+  }
+
+  /* ★ v4.341 答对自动跳下一题。
+     用被点击题卡的 box 引用做幂等保护：定时器触发时若当前 #hz-extra-box
+     已不是这个 box（被手动「换一题」/切走/重绘换掉），就跳过，绝不重复跳。 */
+  function _autoAdvance(box){
+    if(!box)return;
+    setTimeout(function(){
+      var cur=document.getElementById('hz-extra-box');
+      if(cur!==box)return;          /* 题卡已被换掉，不重复跳 */
+      try{ stopSay(); _redraw(); }catch(e){}
+    },1050);
+  }
+
+  /* ★ v4.340 外部考点引擎（G1Chinese）渲染口：
+     raw = {tag,q,speakQ,opts[字符串数组],correct[索引],ans,hint,wordChar}
+     复用本模块同一套题卡外壳 / 选项网格 / 判分 / 错题本 / 发音，保证体验一致。 */
+  var _appQHint='';
+  function renderAppQ(raw,mode,ce){
+    stopSay();
+    _appQHint='';
+    if(!raw||!raw.opts||!raw.opts.length){
+      _curQ={q:'这个题型暂时没有合适的内容',speakQ:'这个题型暂时没有合适的内容'};
+      return wrap(mode,ce,'<div class="quiz-hint" style="font-size:16px;padding:20px 0">这个题型暂时没有合适的内容，换一个试试～</div>');
+    }
+    _pendingWord=raw.wordChar||'';
+    _curQ={tag:raw.tag||'语文 · 考点',q:raw.q,speakQ:raw.speakQ||raw.q,
+           opts:raw.opts.map(String),correct:raw.correct,ans:raw.ans,
+           variant:mode, type:'hanzi-'+mode, hint:raw.hint};
+    _appQHint=raw.hint||'';
+    /* ★ v4.342 练习提示优先引用巧解库口诀（命中 23 考点巧解时更贴近考点）；
+       命中不了就退回题目自带 hint，再不行留空（页面不显示提示框）。 */
+    try{
+      if(typeof explainByLib==='function'){
+        var _lib=explainByLib({q:_curQ});
+        if(_lib&&_lib.rhyme)_appQHint=_lib.rhyme;
+      }
+    }catch(e){}
+    var inner='';
+    if(raw.tag)inner+=tagChip(raw.tag);
+    inner+=qRowHTML(raw.q);
+    inner+=optGridHTML(_curQ.opts,raw.correct,raw.ans);
+    if(_appQHint)inner+='<div id="hz-appq-hint" class="quiz-hint" style="display:none;text-align:left;line-height:1.8">'+escAttr(_appQHint)+'</div>';
+    inner+=listenBtnHTML();
+    var box=wrap(mode,ce,inner);
+    setTimeout(paint,30);
+    return box;
   }
 
   /* 统一外壳：沿用 app 原生 .card .quiz-card */
@@ -1893,6 +1956,7 @@ var XG=[
 
   function render(mode,ce){
     stopSay();
+    _appQHint='';   /* ★ v4.340 切回本模块原生题型时，清掉外部考点题的解析，避免串题 */
     var q=gen(mode);
     if(!q){
       _curQ={q:'这个题型暂时没有合适的内容',speakQ:'这个题型暂时没有合适的内容'};
@@ -1935,5 +1999,5 @@ var XG=[
 
   /* ★ v4.199：gen 必须暴露 —— 主程序 genFlowHanziQ() 判断 HanziExtra.gen 是否存在，
      不暴露就永远走老的两个题型（听音选字/看字选词），偏旁/笔顺/多音等永远出不来。 */
-  return {modes:MODES, render:render, gen:gen, genScorable:genScorable, pySplitStd:pySplitStd};
+  return {modes:MODES, render:render, renderAppQ:renderAppQ, gen:gen, genScorable:genScorable, pySplitStd:pySplitStd};
 })();

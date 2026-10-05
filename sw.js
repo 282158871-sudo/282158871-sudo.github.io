@@ -11,12 +11,13 @@
    ★ v4.110：缓存键按"真实路径"存，不再把所有页面都塞进 './index.html'。
    以前不管访问的是 / 还是 /app.html，都覆写到 index.html 这一个键上，
    导致跳板页和应用页互相覆盖。 */
-var CACHE = 'primary-learn-v331';
-var SW_VER_NUM = 'v4.331';
+var CACHE = 'primary-learn-v342';
+var SW_VER_NUM = 'v4.343';
 var ASSETS = [
   './',
   './index.html',
-  './app_v4.331.html',
+  './app_v4.343.html',
+  './g1_chinese.js',
   './english_g1.js',
   './finder.js',
   './manifest.json',

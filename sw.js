@@ -11,12 +11,12 @@
    ★ v4.110：缓存键按"真实路径"存，不再把所有页面都塞进 './index.html'。
    以前不管访问的是 / 还是 /app.html，都覆写到 index.html 这一个键上，
    导致跳板页和应用页互相覆盖。 */
-var CACHE = 'primary-learn-v342';
-var SW_VER_NUM = 'v4.343';
+var CACHE = 'primary-learn-v348';
+var SW_VER_NUM = 'v4.348';
 var ASSETS = [
   './',
   './index.html',
-  './app_v4.343.html',
+  './app_v4.348.html',
   './g1_chinese.js',
   './english_g1.js',
   './finder.js',
@@ -258,6 +258,25 @@ self.addEventListener('fetch', function (e) {
         return caches.match(pageKey).then(function (r) {
           return r || caches.match('./app.html') || caches.match('./index.html') || caches.match('./');
         });
+      })
+    );
+    return;
+  }
+
+  // 题库分片：网络优先（v4.344）
+  // 理由：题库是要反复校对、随时增删改的"内容"，不是"代码"。
+  // 若走缓存优先，第一次取到就锁死，改了字面上线也不生效——
+  // 这正是 v4.272 在 hanzi_ordertype.js 上踩过的坑（见本文件上方白名单注释）。
+  if (/\/bank_g[1-6]s[12]_(ma|cn)\.js$/.test(url.pathname)) {
+    e.respondWith(
+      fetch(new Request(req, { cache: 'no-store' })).then(function (res) {
+        try {
+          var copy = res.clone();
+          caches.open(CACHE).then(function (c) { c.put(req, copy); });
+        } catch (err) {}
+        return res;
+      }).catch(function () {
+        return caches.match(req).then(function (r) { return r || Response.error(); });
       })
     );
     return;
